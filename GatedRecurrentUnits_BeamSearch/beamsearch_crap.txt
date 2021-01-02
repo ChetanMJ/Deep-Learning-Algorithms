@@ -1,0 +1,162 @@
+def BeamSearch(SymbolSets, y_probs, BeamWidth):
+    '''
+    SymbolSets: This is the list containing all the symbols i.e. vocabulary (without 				  blank)
+	
+    y_probs: Numpy array of (# of symbols+1,Seq_length,batch_size). Note that your 			   batch size for part 1 would always remain 1, but if you plan to use 			your implementation for part 2 you need to incorporate batch_size.
+	
+    BeamWidth: Width of the beam.
+	
+    The function should return the symbol sequence with the best path score (forward 	  probability) and a dictionary of all the final merged paths with their scores. 
+    '''
+    #print(y_probs)
+    batch_size = y_probs.shape[2]
+    Seq_length = y_probs.shape[1]
+    SymbolSets.insert(0,' ')
+    
+    #print("Symbolsets")
+    #print(SymbolSets)
+    Symbol_length = len(SymbolSets)
+    #print("Symbol length :",Symbol_length)
+    SymbolSets = np.array(SymbolSets)
+    
+    #print("batch_size:", batch_size)
+    #print("Seq_length:", Seq_length)
+    #print(y_probs.shape)
+    
+    #top_seq_list = []
+    #top_prob_list = []
+    
+    all_sequences_list = []
+    compressed_symbols = []
+    
+    for b in range(batch_size):
+        previous_bw = 0
+        #print("\n\nbatch ", b)
+        
+        all_sequences = {}
+        
+        for j in range(Seq_length):
+            
+            #print("\n\ni & j", i, j)
+            
+            current_probs = y_probs[:,j,b]
+
+            if j == 0:
+                
+                if Symbol_length <  BeamWidth :
+                    bw = Symbol_length
+                else:
+                    bw = BeamWidth
+                
+                top_indices = np.argsort(current_probs)[-1*bw:].reshape((bw,1))
+                top_probs = np.sort(current_probs)[-1*bw:].reshape((bw,1))
+                top_sequences = top_indices
+                
+                #print("top indices")
+                #print(top_indices)
+                
+                previous_bw = bw
+                
+                #print("BW: ",bw)
+                
+            else:
+                
+                current_probs = current_probs.reshape((1,Symbol_length))
+                
+                #extending probabilities by multiplying previous top probs with all current probs
+                current_probs = np.multiply(top_probs,current_probs)
+                #print("\ncurrent probs")
+                #print(current_probs)
+
+                current_probs = current_probs.reshape(previous_bw*Symbol_length)
+                
+                if len(current_probs) < BeamWidth:
+                    bw = len(current_probs)
+                else:
+                    bw = BeamWidth
+                
+                #print("BW: ",bw)
+                
+                top_indices = np.argsort(current_probs)[-1*bw:].reshape((bw,1))
+                top_probs = np.sort(current_probs)[-1*bw:].reshape((bw,1))
+                
+                #print("top indices")
+                #print(top_indices)
+                #print(top_probs)
+                
+                curr_top_sequences = []
+                #print("entering index loop")
+                for prob_ind in top_indices:                  
+                    
+                    ##getting previous path index and current indices from top indices of extending paths
+                    
+                    previous_path_index = math.floor(prob_ind/Symbol_length)
+                    
+                    
+                    current_symbol_index = prob_ind%Symbol_length
+                    
+                    curr_top_sequences.append(np.append(top_sequences[previous_path_index],current_symbol_index))
+                    
+                top_sequences = np.array(curr_top_sequences)
+                previous_bw = bw
+            print("time sequence", j)
+            print(top_sequences)
+            print(top_probs)
+        
+        
+        
+        
+            ## compressed sequences
+    
+        
+        
+        #print(top_probs)
+        #print()
+        
+        for i in range(len(top_sequences)):
+            compressed_string = ''
+            previous_symbol = ''
+        
+            symbol_index_list = top_sequences[i]
+        
+            for j in range(Seq_length):
+                current_symbol = SymbolSets[symbol_index_list[j]]
+                if (current_symbol != previous_symbol) and (current_symbol != ' ') :
+                    compressed_string = compressed_string + current_symbol
+                
+                previous_symbol = current_symbol
+            
+            print("Compressed String", compressed_string)
+            
+            all_sequences[compressed_string] = top_probs[i][0]
+            
+            if i == (len(top_sequences) - 1):
+                compressed_symbols.append(compressed_string)
+                
+        all_sequences_list.append(all_sequences)
+    
+    '''    
+        top_seq_list.append(top_sequences[-1])
+        top_prob_list.append(top_probs[-1][0])
+            
+        
+    ## compressed sequences
+    
+    compressed_symbols = []
+    for i in range(batch_size):
+        compressed_string = ''
+        previous_symbol = ''
+        
+        symbol_index_list = top_seq_list[i]
+        
+        for j in range(Seq_length):
+           current_symbol = SymbolSets[symbol_index_list[j]]
+           if (current_symbol != previous_symbol) and (current_symbol != ' ') :
+                compressed_string = compressed_string + current_symbol
+           previous_symbol = current_symbol
+            
+        compressed_symbols.append(compressed_string)
+    '''
+        
+    return compressed_symbols[0],all_sequences_list[0]
+
