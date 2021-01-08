@@ -1,4 +1,4 @@
-# Deep-Learning-Algorithms
+# 11785 - Deep-Learning-Algorithms
 
 This repository is for the deep learning algorithms implemented as part of course 11-785 Intro to Deep Learning
 
